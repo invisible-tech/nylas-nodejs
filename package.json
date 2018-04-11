@@ -1,20 +1,23 @@
 {
   "name": "nylas",
   "version": "4.2.2",
-  "description":
-    "A NodeJS wrapper for the Nylas REST API for email, contacts, and calendar.",
+  "description": "A NodeJS wrapper for the Nylas REST API for email, contacts, and calendar.",
   "main": "lib/nylas.js",
   "scripts": {
     "test": "jest",
     "lint": "eslint \"./src/**/*.js\"",
-    "prettier":
-      "prettier --single-quote --trailing-comma es5 --write \"./src/**/*.js\"",
+    "prettier": "prettier --single-quote --trailing-comma es5 --write \"./src/**/*.js\"",
     "build": "babel src --presets babel-preset-env --out-dir lib",
     "prepublish": "yarn build",
     "prepare": "yarn build",
     "watch": "nodemon -w src --exec npm run build"
   },
-  "keywords": ["email", "contacts", "calendar", "nylas"],
+  "keywords": [
+    "email",
+    "contacts",
+    "calendar",
+    "nylas"
+  ],
   "author": "Nylas, Inc.",
   "license": "MIT",
   "dependencies": {
@@ -24,7 +27,7 @@
     "bluebird": "^2.9.13",
     "clone": "1.0.1",
     "express-session": "^1.15.6",
-    "request": "^2.63.0",
+    "request": "^2.85.0",
     "underscore": "^1.7.0"
   },
   "devDependencies": {
