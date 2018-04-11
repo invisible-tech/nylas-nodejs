@@ -2,6 +2,7 @@ import _ from 'underscore';
 
 import RestfulModel from './restful-model';
 import Attributes from './attributes';
+import { EROFS } from 'constants';
 
 export default class File extends RestfulModel {
   constructor(...args) {
@@ -58,17 +59,24 @@ export default class File extends RestfulModel {
       });
   }
 
+  _download() {
+    if (!this.id) {
+      throw new Error('Please provide a File id');
+    }
+
+    return this.connection.request({
+      path: `/files/${this.id}/download`,
+      encoding: null,
+      downloadRequest: true,
+    });
+  }
+
   download(callback = null) {
     if (!this.id) {
       throw new Error('Please provide a File id');
     }
 
-    return this.connection
-      .request({
-        path: `/files/${this.id}/download`,
-        encoding: null,
-        downloadRequest: true,
-      })
+    return this._download()
       .then(response => {
         let filename;
         const file = _.extend(response.headers, { body: response.body });
@@ -89,6 +97,22 @@ export default class File extends RestfulModel {
           callback(err);
         }
         return Promise.reject(err);
+      });
+  }
+
+  getReadableStream(callback) {
+    return this._download()
+      .then(response => {
+        if (!callback) {
+          return Promise.resolve(response);
+        }
+        callback(null, response);
+      })
+      .catch(err => {
+        if (!callback) {
+          return Promise.reject(err);
+        }
+        callback(err);
       });
   }
 

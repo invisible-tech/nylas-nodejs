@@ -2,6 +2,11 @@ import Promise from 'bluebird';
 import request from 'request';
 import _ from 'underscore';
 
+import {
+  Readable as ReadableStream,
+  Writable as WritableStream
+} from 'stream';
+
 import Nylas from '../src/nylas';
 import NylasConnection from '../src/nylas-connection';
 import File from '../src/models/file';
@@ -176,6 +181,105 @@ describe('File', () => {
             done();
           })
           .catch(() => {});
+      });
+    });
+  });
+
+  describe('getReadableStream', () => {
+    test('should do a GET request', done => {
+      testContext.file.getReadableStream().then(() => {
+        expect(testContext.connection.request).toHaveBeenCalledWith({
+          path: '/files/fileId/download',
+          encoding: null,
+          downloadRequest: true,
+        });
+        done();
+      });
+    });
+
+    describe('when the request succeeds', () => {
+      beforeEach(() => {
+        testContext.connection.request = jest.fn(() => {
+          const data = 'we are your friends'.split(' ').reverse();
+          const response = new ReadableStream();
+
+          response._read = function() {
+            if (data.length > 0) {
+              this.push(data.pop());
+            } else {
+              this.push(null);
+            }
+          };
+
+          return Promise.resolve(response);
+        });
+      });
+
+      test('should resolve with a readable stream of the file', done => {
+        testContext.file.getReadableStream().then(fileStream => {
+          const data = [];
+          const outStream = new WritableStream();
+
+          outStream._write = function(chunk, encoding, _done) {
+            data.push(chunk.toString('utf-8'));
+            _done();
+          };
+
+          outStream.on('finish', () => {
+            const finalData = data.join(' ');
+            expect(finalData).toEqual('we are your friends');
+            done();
+          });
+
+          fileStream.pipe(outStream);
+        });
+      });
+
+      test('should call the callback with the readable stream of the file', done => {
+        testContext.file.getReadableStream((err, fileStream) => {
+          const data = [];
+          const outStream = new WritableStream();
+
+          outStream._write = function (chunk, encoding, _done) {
+            data.push(chunk.toString('utf-8'));
+            _done();
+          };
+
+          outStream
+          outStream.on('finish', () => {
+            const finalData = data.join(' ');
+            expect(finalData).toEqual('we are your friends');
+            done();
+          });
+
+          fileStream.pipe(outStream);
+        });
+      });
+    });
+
+    describe('when the request fails', () => {
+      beforeEach(() => {
+        testContext.error = new Error('Network error');
+        testContext.connection.request = jest.fn(() => {
+          return Promise.reject(testContext.error);
+        });
+      });
+
+      test('should reject with the error', done => {
+        testContext.file.getReadableStream().catch(err => {
+          expect(err).toBe(testContext.error);
+          done();
+        });
+      });
+
+      test('should call the callback with the error', done => {
+        testContext.file
+          .getReadableStream((err, file) => {
+            expect(err).toBe(testContext.error);
+            expect(file).toBe(undefined);
+            done();
+          })
+          .catch(() => { });
       });
     });
   });
